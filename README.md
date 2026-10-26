@@ -9,7 +9,7 @@ Agent 流式对话与工具调用入门练习，共六个相互独立的小项�
 | --- | --- | --- |
 | [`anythingllm-mcp/`](anythingllm-mcp/) | 把 AnythingLLM 工作区封装成 MCP 工具，供 opencode / 任意 MCP 客户端提问 | Python · MCP SDK 2.x · Streamable HTTP |
 | [`anthingllm-shangchuanwangye/`](anthingllm-shangchuanwangye/) | 单文件网页工具：上传文档到 AnythingLLM 并触发向量化嵌入 | 原生 HTML / JavaScript |
-| [`chongwuyiyuanmcp/pet-hospital-mcp/`](chongwuyiyuanmcp/pet-hospital-mcp/) | 把既有 Go 宠物医院 REST API 适配成无状态 MCP 服务 | Python · MCP SDK 2.x · Pydantic · pytest |
+| [`chongwuyiyuanmcp/`](chongwuyiyuanmcp/) | 把既有 Go 宠物医院 REST API 适配成无状态 MCP 服务 | Python · MCP SDK 2.x · Pydantic · pytest |
 | [`Agent/Practice01/`](Agent/Practice01/) | 最小流式对话练习：直接调用 OpenAI 兼容接口逐字输出回答 | Python · requests |
 | [`Agent/Practice02/`](Agent/Practice02/) | 工具调用（function calling）练习：日期/闰年计算 + 本地文件目录读写改删，附 Mermaid 架构图 | Python · requests |
 | [`Agent/tAgent/`](Agent/tAgent/) | 上述练习的工程化重构版（原 `xAgent`）：核心与界面分离的智能体框架，内置 15 个工具，含联网搜索、网页阅读与本地命令调用，先落地 Textual 终端界面 | Python · httpx · trafilatura · Textual · pytest |
@@ -99,13 +99,13 @@ python test_client.py
 若 AnythingLLM 的端口不是默认的 `50368`，在地址栏附加参数打开：
 `index.html?api=http://localhost:<端口>/api`。
 
-### 3. chongwuyiyuanmcp/pet-hospital-mcp
+### 3. chongwuyiyuanmcp
 
 前置条件：本机已运行 Go 宠物医院 REST API（默认 `http://127.0.0.1:8080`），
 且 `GET /health` 可访问。
 
 ```bash
-cd chongwuyiyuanmcp/pet-hospital-mcp
+cd chongwuyiyuanmcp
 
 python -m venv .venv
 # Windows
@@ -133,9 +133,9 @@ npx @modelcontextprotocol/inspector
 # Transport 选 Streamable HTTP，URL 填 http://127.0.0.1:8000/mcp
 ```
 
-详见 [`chongwuyiyuanmcp/pet-hospital-mcp/README.md`](chongwuyiyuanmcp/pet-hospital-mcp/README.md)
+详见 [`chongwuyiyuanmcp/README.md`](chongwuyiyuanmcp/README.md)
 与面向后续开发者的
-[`UPGRADE_PROMPT.md`](chongwuyiyuanmcp/pet-hospital-mcp/UPGRADE_PROMPT.md)。
+[`UPGRADE_PROMPT.md`](chongwuyiyuanmcp/UPGRADE_PROMPT.md)。
 
 ### 4. Agent/Practice01
 
@@ -273,7 +273,7 @@ pytest -q              # 88 个离线用例，不发真实请求
 `pet-hospital-mcp` 使用 MCP **2026-07-28** 的无状态 Streamable HTTP 流程：
 不实现旧版 `initialize` 握手，不使用 `Mcp-Session-Id`，无会话存储与过期机制，
 每个请求独立携带 `_meta` 协议信封。详见其
-[README](chongwuyiyuanmcp/pet-hospital-mcp/README.md#无状态说明)。
+[README](chongwuyiyuanmcp/README.md#无状态说明)。
 
 ## 许可证
 
