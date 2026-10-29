@@ -138,7 +138,7 @@ def test_run_cli_missing_command_raises() -> None:
 
 
 def test_run_cli_unknown_program_reports_exit_code_127() -> None:
-    output = cli_tools.run_cli("xagent_command_that_does_not_exist")
+    output = cli_tools.run_cli("tagent_command_that_does_not_exist")
     assert "退出码：127" in output
     assert "找不到可执行程序" in output
     if os.name == "nt":

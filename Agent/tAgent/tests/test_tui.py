@@ -10,13 +10,13 @@ from textual.pilot import Pilot
 from core.agent import Agent
 from core.tools.registry import ToolRegistry
 from tests.fakes import FakeLLMClient, text_events, tool_events
-from tui.app import XAgentApp
+from tui.app import TAgentApp
 from tui.widgets.chat_log import ChatLog, ToolCallPanel
 from tui.widgets.prompt_input import PromptInput
 from tui.widgets.status_bar import StatusBar
 
 
-def build_app(client: FakeLLMClient) -> XAgentApp:
+def build_app(client: FakeLLMClient) -> TAgentApp:
     registry = ToolRegistry()
     registry.register_function(
         "echo",
@@ -25,12 +25,12 @@ def build_app(client: FakeLLMClient) -> XAgentApp:
         lambda **kwargs: f"echo:{kwargs.get('text')}",
     )
     agent = Agent(client=client, registry=registry, max_rounds=3, system_prompt="测试")
-    return XAgentApp(agent=agent)
+    return TAgentApp(agent=agent)
 
 
 def run(
     client: FakeLLMClient,
-    scenario: Callable[[XAgentApp, Pilot], Awaitable[None]],
+    scenario: Callable[[TAgentApp, Pilot], Awaitable[None]],
 ) -> None:
     """在独立事件循环中执行一段 TUI 场景。"""
 
@@ -44,7 +44,7 @@ def run(
 
 
 def test_app_mounts_and_shows_welcome() -> None:
-    async def scenario(app: XAgentApp, pilot: Pilot) -> None:
+    async def scenario(app: TAgentApp, pilot: Pilot) -> None:
         chat = app.query_one(ChatLog)
         assert chat.query(".info-message")
 
@@ -52,7 +52,7 @@ def test_app_mounts_and_shows_welcome() -> None:
 
 
 def test_submitting_message_renders_answer() -> None:
-    async def scenario(app: XAgentApp, pilot: Pilot) -> None:
+    async def scenario(app: TAgentApp, pilot: Pilot) -> None:
         app.query_one(PromptInput).text = "你好"
         await pilot.press("enter")
         await pilot.pause()
@@ -70,7 +70,7 @@ def test_submitting_message_renders_answer() -> None:
 
 
 def test_tool_call_is_rendered_with_result() -> None:
-    async def scenario(app: XAgentApp, pilot: Pilot) -> None:
+    async def scenario(app: TAgentApp, pilot: Pilot) -> None:
         app.query_one(PromptInput).text = "调用工具"
         await pilot.press("enter")
         await pilot.pause()
@@ -89,7 +89,7 @@ def test_tool_call_is_rendered_with_result() -> None:
 
 
 def test_slash_command_is_handled_locally() -> None:
-    async def scenario(app: XAgentApp, pilot: Pilot) -> None:
+    async def scenario(app: TAgentApp, pilot: Pilot) -> None:
         app.query_one(PromptInput).text = "/help"
         await pilot.press("enter")
         await pilot.pause()
@@ -101,7 +101,7 @@ def test_slash_command_is_handled_locally() -> None:
 
 
 def test_enter_key_submits_input() -> None:
-    async def scenario(app: XAgentApp, pilot: Pilot) -> None:
+    async def scenario(app: TAgentApp, pilot: Pilot) -> None:
         prompt = app.query_one(PromptInput)
         prompt.text = "换行测试"
         await pilot.press("enter")
@@ -118,7 +118,7 @@ def test_model_error_is_shown_as_error_message() -> None:
             raise RuntimeError("网络炸了")
             yield  # pragma: no cover
 
-    async def scenario(app: XAgentApp, pilot: Pilot) -> None:
+    async def scenario(app: TAgentApp, pilot: Pilot) -> None:
         app.query_one(PromptInput).text = "你好"
         await pilot.press("enter")
         await pilot.pause()

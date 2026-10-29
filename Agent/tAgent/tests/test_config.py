@@ -34,8 +34,8 @@ def test_environment_overrides_file(tmp_path, monkeypatch) -> None:
     config = tmp_path / "config.ini"
     config.write_text(CONFIG_TEMPLATE, encoding="utf-8")
 
-    monkeypatch.setenv("XAGENT_MODEL", "env-model")
-    monkeypatch.setenv("XAGENT_BASE_URL", "https://env.invalid/v1")
+    monkeypatch.setenv("TAGENT_MODEL", "env-model")
+    monkeypatch.setenv("TAGENT_BASE_URL", "https://env.invalid/v1")
 
     settings = load_settings(config)
 

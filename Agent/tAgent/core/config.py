@@ -3,13 +3,13 @@
 配置来源优先级（从高到低）：
 
 1. 显式传入的配置文件路径
-2. 环境变量 ``XAGENT_CONFIG`` 指向的配置文件
+2. 环境变量 ``TAGENT_CONFIG`` 指向的配置文件
 3. 当前工作目录下的 ``config.ini``
-4. 项目根目录（xAgent/）下的 ``config.ini``
-5. 用户目录下的 ``~/.xagent/config.ini``
+4. 项目根目录（tAgent/）下的 ``config.ini``
+5. 用户目录下的 ``~/.tagent/config.ini``
 
-环境变量 ``XAGENT_BASE_URL`` / ``XAGENT_API_KEY`` / ``XAGENT_MODEL`` 可覆盖
-配置文件中的同名字段，便于 CI 与容器部署；``XAGENT_SEARCH_API_KEY`` 可覆盖
+环境变量 ``TAGENT_BASE_URL`` / ``TAGENT_API_KEY`` / ``TAGENT_MODEL`` 可覆盖
+配置文件中的同名字段，便于 CI 与容器部署；``TAGENT_SEARCH_API_KEY`` 可覆盖
 ``[search]`` 段的百度千帆搜索 API Key。
 """
 
@@ -25,11 +25,11 @@ from core.errors import ConfigurationError
 from core.prompts import DEFAULT_SYSTEM_PROMPT
 
 CONFIG_FILENAME = "config.ini"
-ENV_CONFIG_PATH = "XAGENT_CONFIG"
-ENV_BASE_URL = "XAGENT_BASE_URL"
-ENV_API_KEY = "XAGENT_API_KEY"
-ENV_MODEL = "XAGENT_MODEL"
-ENV_SEARCH_API_KEY = "XAGENT_SEARCH_API_KEY"
+ENV_CONFIG_PATH = "TAGENT_CONFIG"
+ENV_BASE_URL = "TAGENT_BASE_URL"
+ENV_API_KEY = "TAGENT_API_KEY"
+ENV_MODEL = "TAGENT_MODEL"
+ENV_SEARCH_API_KEY = "TAGENT_SEARCH_API_KEY"
 
 SEARCH_ENDPOINT = "https://qianfan.baidubce.com/v2/ai_search/web_search"
 SEARCH_DEFAULT_EDITION = "standard"
@@ -114,7 +114,7 @@ def find_config_file(explicit: str | os.PathLike[str] | None = None) -> Path | N
         return env_file.resolve()
     candidates.append(Path.cwd() / CONFIG_FILENAME)
     candidates.append(_PACKAGE_ROOT / CONFIG_FILENAME)
-    candidates.append(Path.home() / ".xagent" / CONFIG_FILENAME)
+    candidates.append(Path.home() / ".tagent" / CONFIG_FILENAME)
 
     for candidate in candidates:
         if candidate.is_file():

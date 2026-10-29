@@ -12,7 +12,7 @@ Agent 流式对话与工具调用入门练习，共六个相互独立的小项�
 | [`chongwuyiyuanmcp/`](chongwuyiyuanmcp/) | 把既有 Go 宠物医院 REST API 适配成无状态 MCP 服务 | Python · MCP SDK 2.x · Pydantic · pytest |
 | [`Agent/Practice01/`](Agent/Practice01/) | 最小流式对话练习：直接调用 OpenAI 兼容接口逐字输出回答 | Python · requests |
 | [`Agent/Practice02/`](Agent/Practice02/) | 工具调用（function calling）练习：日期/闰年计算 + 本地文件目录读写改删，附 Mermaid 架构图 | Python · requests |
-| [`Agent/tAgent/`](Agent/tAgent/) | 上述练习的工程化重构版（原 `xAgent`）：核心与界面分离的智能体框架，内置 15 个工具，含联网搜索、网页阅读与本地命令调用，先落地 Textual 终端界面 | Python · httpx · trafilatura · Textual · pytest |
+| [`Agent/tAgent/`](Agent/tAgent/) | 上述练习的工程化重构版（原 `xAgent`）：核心与界面分离的智能体框架，内置 15 个工具，支持 Skills 技能动态加载、联网搜索、网页阅读与本地命令调用，先落地 Textual 终端界面 | Python · httpx · trafilatura · Textual · pytest |
 
 > 目录名 `anthingllm-shangchuanwangye` 为历史遗留拼写（`shangchuanwangye` = 上传网页），
 > 为避免破坏既有链接予以保留。
@@ -53,8 +53,8 @@ Agent 流式对话与工具调用入门练习，共六个相互独立的小项�
 - **Agent/Practice02** 在 Practice01 的基础上引入 **function calling**：模型按需调用
   `getdate`（执行本地 `date` / `time` 命令）、`isLeapYear` 与 10 个本地文件工具，
   本地执行结果回填 `tool` 消息后继续对话，是「模型 → 工具 → 模型」的最小闭环。
-- **Agent/tAgent** 是 Practice02 的工程化重构（原 `xAgent`，目录已改名、项目内部仍以
-  `xagent` 命名）：把单文件拆成 `core`（业务：配置 / 会话 / 模型调用 / 工具执行 / 编排）
+- **Agent/tAgent** 是 Practice02 的工程化重构（原 `xAgent`，已正式更名为 `tAgent`）：
+  把单文件拆成 `core`（业务：配置 / 会话 / 模型调用 / 工具执行 / 编排）
   与 `tui`（Textual 界面）两层，`core` 以**异步事件流**对外输出，因此同一套核心可以直接
   接到终端、Web、桌面端与移动端；`web/`、`desktop/`、`mobile/` 三个目录已按统一契约预留。
 
@@ -190,13 +190,13 @@ python file_chat.py
 
 ### 6. Agent/tAgent
 
-在 Practice02 基础上重构出的**分层工程**（目录由原 `xAgent` 重命名而来，
-项目内部仍以 `xagent` 命名）：核心逻辑与界面彻底分离，
+在 Practice02 基础上重构出的**分层工程**（原 `xAgent`，已正式更名为 `tAgent`）：
+核心逻辑与界面彻底分离，
 先落地 Textual 终端界面，并为后续 Web / Desktop / Mobile 界面预留统一契约。
 
 ```text
 tAgent/
-├── core/     模型调用、工具执行、会话状态、编排（不依赖任何界面框架）
+├── core/     模型调用、工具执行、会话状态、编排 + skills 技能加载（不依赖任何界面框架）
 ├── tui/      Textual 终端界面（只消费 core 的事件流）
 ├── web/ desktop/ mobile/   预留的其他前端（目录内附实现指引）
 ├── docs/FRONTEND_CONTRACT.md   前端接入契约
@@ -211,7 +211,7 @@ pip install -e ".[tui,dev]"
 copy config.example.ini config.ini
 
 python -m tui          # 启动终端界面
-pytest -q              # 88 个离线用例，不发真实请求
+pytest -q              # 120 个离线用例，不发真实请求
 ```
 
 界面操作：`Enter` 发送、`Shift+Enter` / `Alt+Enter` 换行、`Ctrl+L` 清空、`F1` 帮助、
@@ -229,6 +229,8 @@ pytest -q              # 88 个离线用例，不发真实请求
 - **网页阅读**：`fetchweb` 用本地 `curl` 下载网页，再经 `trafilatura` 提取正文并转为 Markdown；
 - **本地命令**：`RunCli` 让 Agent 调用本机已安装的命令行程序（如 `python`、`git`、`ipconfig`），
   以参数列表 + `shell=False` 执行，不拼接 shell 字符串；
+- **技能加载（Skills）**：从 `.agentskills/` 动态发现技能、惰性加载指令，模型经 `loadSkill`
+  工具按名取用；项目已正式更名为 tAgent（配置环境变量前缀为 `TAGENT_`）；
 - **可替换**：模型客户端遵循 `LLMClient` 协议，换服务商不改业务代码；
 - **兼容性强**：对服务商返回的畸形工具调用（参数碎片、缺调用 id、整段调用塞进参数）自动归一化。
 

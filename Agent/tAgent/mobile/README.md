@@ -28,7 +28,7 @@ mobile/
 └── lib/
     ├── main.dart
     ├── api/
-    │   └── xagent_client.dart    # SSE 客户端
+    │   └── tagent_client.dart    # SSE 客户端
     └── pages/
         └── chat_page.dart
 ```
@@ -55,6 +55,6 @@ mobile/
 ## 启动方式（实现后）
 
 ```bash
-cd Agent/xAgent/mobile
+cd Agent/tAgent/mobile
 flutter run
 ```

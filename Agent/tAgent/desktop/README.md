@@ -61,7 +61,7 @@ class DesktopApp:
 ## 启动方式（实现后）
 
 ```powershell
-cd Agent/xAgent
+cd Agent/tAgent
 pip install -e ".[desktop]"   # 依赖在实现时确定
 python -m desktop
 ```

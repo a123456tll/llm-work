@@ -1,4 +1,4 @@
-"""xAgent 的 Textual 应用。
+"""tAgent 的 Textual 应用。
 
 职责：
 - 组装界面（对话区、输入框、状态栏）
@@ -37,16 +37,16 @@ from tui.widgets.status_bar import StatusBar
 
 FLUSH_INTERVAL = 0.06
 WELCOME_TEXT = (
-    "欢迎使用 xAgent。输入问题后按 Enter 发送，Shift+Enter 换行；"
+    "欢迎使用 tAgent。输入问题后按 Enter 发送，Shift+Enter 换行；"
     "输入 /help 查看可用命令。"
 )
 
 
-class XAgentApp(App[None]):
-    """xAgent 终端界面。"""
+class TAgentApp(App[None]):
+    """tAgent 终端界面。"""
 
     CSS_PATH = "theme.tcss"
-    TITLE = "xAgent"
+    TITLE = "tAgent"
     SUB_TITLE = "Core + Textual"
 
     BINDINGS = [
@@ -223,7 +223,7 @@ def _safe_cwd() -> str:
 
 
 def main() -> None:  # pragma: no cover - 便捷入口
-    XAgentApp().run()
+    TAgentApp().run()
 
 
 if __name__ == "__main__":  # pragma: no cover

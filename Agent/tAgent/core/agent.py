@@ -31,6 +31,7 @@ from core.llm.types import ContentDelta, ToolCallDelta, Usage
 from core.models import Message, ToolCall
 from core.prompts import DEFAULT_SYSTEM_PROMPT
 from core.session import Session
+from core.skills.registry import SkillRegistry
 from core.tools.registry import ToolRegistry
 from core.utils.text import (
     parse_json_object,
@@ -47,6 +48,7 @@ class Agent:
         self,
         client: LLMClient,
         registry: ToolRegistry | None = None,
+        skills: SkillRegistry | None = None,
         session: Session | None = None,
         *,
         max_rounds: int = 10,
@@ -54,6 +56,7 @@ class Agent:
     ) -> None:
         self._client = client
         self._registry = registry if registry is not None else ToolRegistry()
+        self._skills = skills if skills is not None else SkillRegistry()
         self._session = session if session is not None else Session(system_prompt)
         self._max_rounds = max(1, max_rounds)
         self._running = False
@@ -67,6 +70,10 @@ class Agent:
     @property
     def registry(self) -> ToolRegistry:
         return self._registry
+
+    @property
+    def skills(self) -> SkillRegistry:
+        return self._skills
 
     @property
     def session(self) -> Session:

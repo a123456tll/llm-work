@@ -1,4 +1,4 @@
-# xAgent
+# tAgent
 
 在 [`Agent/Practice02/file_chat.py`](../Practice02/file_chat.py) 基础上重构的智能体项目：
 把**核心业务逻辑**与**界面代码**彻底分离，先落地 Textual 终端界面（TUI），
@@ -22,13 +22,14 @@ tests/   ← core 与 tui 的自动化测试
 - **可替换**：模型客户端遵循 `LLMClient` 协议，换服务商不改业务代码；
 - **联网搜索**：`searchweb` 工具调用百度千帆「AI 搜索 - 网页搜索」API，返回网页标题、摘要片段与链接（每月 1500 次免费额度，不产生模型 token 费用）；
 - **网页阅读**：`fetchweb` 工具调用本地 `curl` 下载网页，再按"精度 → 召回 → 标准库纯文本"三级降级提取正文并转换为 Markdown，导航首页也能提取到内容；
-- **可测试**：核心层与 TUI 层均有自动化测试（88 个用例，全部离线运行）；
+- **技能加载（Skills）**：从项目根目录的 `.agentskills/` 动态发现技能，初始化只加载 `name` / `description`，完整指令经 `loadSkill` 工具按需惰性加载；
+- **可测试**：核心层与 TUI 层均有自动化测试（120 个用例，全部离线运行）；
 - **兼容性强**：对服务商返回的畸形工具调用（参数碎片、缺调用 id、整段调用塞进参数）自动归一化。
 
 ## 快速开始
 
 ```powershell
-cd Agent/xAgent
+cd Agent/tAgent
 
 # 1. 安装依赖（Textual 为界面依赖）
 pip install -e ".[tui,dev]"
@@ -46,10 +47,10 @@ python -m tui
 也可以直接用环境变量提供配置：
 
 ```powershell
-$env:XAGENT_BASE_URL = "https://api.siliconflow.cn/v1"
-$env:XAGENT_API_KEY = "<你的 API Key>"
-$env:XAGENT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-$env:XAGENT_SEARCH_API_KEY = "<你的千帆搜索 API Key>"   # 可选：联网搜索
+$env:TAGENT_BASE_URL = "https://api.siliconflow.cn/v1"
+$env:TAGENT_API_KEY = "<你的 API Key>"
+$env:TAGENT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+$env:TAGENT_SEARCH_API_KEY = "<你的千帆搜索 API Key>"   # 可选：联网搜索
 python -m tui
 ```
 
@@ -90,7 +91,7 @@ top_k = 10
 - `edition` 可选 `standard`（默认）/ `turbo` / `pro`，三者计费规则不同；
 - 返回每条结果的标题、发布日期、URL 与摘要片段，需要阅读原文时模型会再用 `fetchweb` 抓取；
 - query 超过 72 字符（汉字按 2 计）会自动截断，单条摘要超过 300 字会省略；
-- 兼容旧配置名 `baidu_qianfan_key`，也可用环境变量 `XAGENT_SEARCH_API_KEY` 覆盖；
+- 兼容旧配置名 `baidu_qianfan_key`，也可用环境变量 `TAGENT_SEARCH_API_KEY` 覆盖；
 - API Key 为空时工具仍会注册，但会把“未配置”错误回传给模型；
 - 网络超时、HTTP 错误、API 返回错误码都会转成清晰的中文错误。
 
@@ -117,12 +118,31 @@ API 文档：<https://cloud.baidu.com/doc/qianfan-api/s/Wmbq4z7e5>
 - 执行结果统一回传给模型：退出码（0 表示成功）、标准输出、标准错误，模型据此判断成败并决定下一步；
 - 默认 60 秒执行超时（超时返回退出码 124），stdout / stderr 各自超过 8000 字符会截断并标明原始长度；
 - 程序不存在时返回退出码 127，并提示如何调用 shell 内置命令（`dir`、`cd` 等）或 `.cmd`/`.bat` 程序（如 `npm`、`pip`）：经 `cmd /c`（Windows）/ `sh -c`（类 Unix）调用；
-- **本阶段不设白名单、黑名单或审批，命令以运行 xAgent 的当前用户权限执行，仅限受控教学实验环境使用。**
+- **本阶段不设白名单、黑名单或审批，命令以运行 tAgent 的当前用户权限执行，仅限受控教学实验环境使用。**
+
+## Skills（技能加载）
+
+tAgent 支持以「技能（Skill）」为单位动态扩展能力：在**项目根目录**（默认启动时的工作目录）下创建 `.agentskills/` 目录，其中每个子目录对应一个 Skill，至少包含一个 `SKILL.md`：
+
+```markdown
+---
+name: 技能名
+description: 一句话说明该技能能做什么（供模型判断何时调用）
+---
+技能完整指令正文（模型通过 loadSkill 按需加载）
+```
+
+- **惰性加载**：初始化阶段只解析 `SKILL.md` 文件头的 YAML Frontmatter（`name` + `description`），完整正文不预读，由 `SkillSpec.body` 在模型实际需要时惰性读取；
+- **零额外依赖**：核心层沿用「零第三方依赖」约定，内置一个只覆盖 Skill 元数据的极简 YAML Frontmatter 解析器；
+- **自动发现**：`build_agent()` 默认以启动工作目录为项目根，自动发现并注册 `.agentskills` 里的 Skill；目录不存在或某个 Skill 无效时不会让启动失败，而是跳过并告警；
+- **注入提示词**：发现的 Skill 的 `name` + `description` 会拼进 System Prompt，模型据此判断何时使用；
+- **loadSkill 工具**：模型经 `loadSkill` 工具按名加载 Skill 的 `SKILL.md` 全文，或读取其附加文件（`filename` 支持相对技能目录、相对项目根或绝对路径，读取范围严格限制在技能目录内，越界路径一律拒绝）；
+- 仅传 `name` 或传 `""` / `list` / `all` / `help` 时，返回当前全部可用技能清单。
 
 ## 目录结构
 
 ```text
-xAgent/
+tAgent/
 ├── core/                      # ── 核心层（无界面依赖）──────────────────
 │   ├── config.py              #    配置加载（文件 + 环境变量）
 │   ├── models.py              #    领域模型：Message / ToolCall
@@ -140,6 +160,7 @@ xAgent/
 │   │   ├── base.py            #      ToolSpec / ToolResult
 │   │   ├── registry.py        #      注册、参数校验、调用分发
 │   │   └── builtin/           #      内置工具（datetime / filesystem / web_search / fetch_web）
+│   ├── skills/                #    技能加载（Skill 发现 / 惰性读取 / loadSkill 工具）
 │   └── utils/                 #    通用工具（文本、文件）
 ├── tui/                       # ── Textual 终端界面 ─────────────────────
 │   ├── app.py                 #    应用主体：事件 → 界面
@@ -155,7 +176,7 @@ xAgent/
 
 ## 与 Practice02 的差异
 
-| 维度 | `Practice02/file_chat.py` | `xAgent` |
+| 维度 | `Practice02/file_chat.py` | `tAgent` |
 | --- | --- | --- |
 | 结构 | 单文件，模型调用 / 工具 / 界面混在一起 | `core` + `tui` 分层 |
 | 界面 | `print` + `input` | Textual 终端界面（流式渲染、工具面板、状态栏） |
@@ -164,12 +185,12 @@ xAgent/
 | 参数校验 | 无 | 注册中心统一校验必填项与类型 |
 | 错误 | 打印到控制台 | 事件流（`ErrorRaised`）交给前端渲染 |
 | 复用 | 只能跑命令行 | 同一套核心可接入 TUI / Web / Desktop / Mobile |
-| 测试 | 无 | 88 个 pytest 用例（离线） |
+| 测试 | 无 | 120 个 pytest 用例（离线） |
 
 ## 测试
 
 ```powershell
-cd Agent/xAgent
+cd Agent/tAgent
 pip install -e ".[dev]"
 pytest -q
 ```

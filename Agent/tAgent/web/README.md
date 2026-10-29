@@ -70,7 +70,7 @@ dataclass，可直接用 `dataclasses.asdict()` 序列化。
 ## 启动方式（实现后）
 
 ```powershell
-cd Agent/xAgent
+cd Agent/tAgent
 pip install -e ".[web]"
 python -m web --host 127.0.0.1 --port 8000
 ```

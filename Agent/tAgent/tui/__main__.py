@@ -7,13 +7,13 @@ import sys
 
 from core.config import load_settings
 from core.errors import ConfigurationError
-from tui.app import XAgentApp
+from tui.app import TAgentApp
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="xagent-tui",
-        description="xAgent —— 基于 Textual 的终端智能体界面",
+        prog="tagent-tui",
+        description="tAgent —— 基于 Textual 的终端智能体界面",
     )
     parser.add_argument(
         "-c",
@@ -49,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     settings = settings.with_overrides(
         llm_model=args.model, llm_base_url=args.base_url
     )
-    XAgentApp(settings=settings).run()
+    TAgentApp(settings=settings).run()
     return 0
 
 

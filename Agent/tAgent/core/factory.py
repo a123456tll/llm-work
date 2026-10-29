@@ -6,11 +6,19 @@
 
 from __future__ import annotations
 
+import os
+
 from core.agent import Agent
 from core.config import Settings, load_settings
 from core.llm.client import LLMClient
 from core.llm.openai_client import OpenAICompatibleClient
 from core.session import Session
+from core.skills import (
+    SkillRegistry,
+    build_skill_tools,
+    build_skills_prompt,
+    load_skills,
+)
 from core.tools.base import ToolSpec
 from core.tools.builtin.cli_tools import build_cli_tools
 from core.tools.builtin.datetime_tools import build_datetime_tools
@@ -36,6 +44,17 @@ def build_default_registry(settings: Settings | None = None) -> ToolRegistry:
     return registry
 
 
+def build_default_skill_registry(
+    project_root: str | os.PathLike[str] | None = None,
+) -> SkillRegistry:
+    """发现并注册项目根目录（默认启动时的工作目录）下 ``.agentskills`` 里的 Skill。
+
+    初始化阶段只加载每个 Skill 的 ``name`` 与 ``description``，不读取正文。
+    目录不存在时返回空注册中心，不会让应用启动失败。
+    """
+    return load_skills(project_root=project_root)
+
+
 def build_client(settings: Settings) -> LLMClient:
     """根据配置构造 LLM 客户端。"""
     return OpenAICompatibleClient(
@@ -51,31 +70,52 @@ def build_agent(
     *,
     client: LLMClient | None = None,
     registry: ToolRegistry | None = None,
+    skills: SkillRegistry | None = None,
     session: Session | None = None,
     extra_tools: list[ToolSpec] | None = None,
 ) -> Agent:
     """构造一个开箱即用的 Agent。
 
     参数全部可选：未显式提供时使用配置文件 + 内置工具 + 新会话。
+    ``skills`` 未提供时，默认从启动工作目录的 ``.agentskills`` 发现并注册 Skill。
     """
     resolved = settings if settings is not None else load_settings()
     tool_registry = registry if registry is not None else build_default_registry(resolved)
     for tool in extra_tools or []:
         tool_registry.register(tool)
 
+    skill_registry = skills if skills is not None else build_default_skill_registry()
+    # 注册 loadSkill 工具：让模型能按提示中的指引，按名加载 Skill 完整指令
+    if skill_registry:
+        for tool in build_skill_tools(skill_registry):
+            tool_registry.register(tool)
+
     llm_client = client if client is not None else build_client(resolved)
+
+    # 把发现的 Skill（name + description）注入 System Prompt
+    full_prompt = resolved.system_prompt
+    skills_block = build_skills_prompt(skill_registry)
+    if skills_block:
+        full_prompt = f"{full_prompt}\n\n{skills_block}"
+
     conversation = (
         session
         if session is not None
-        else Session(system_prompt=resolved.system_prompt, session_id="default")
+        else Session(system_prompt=full_prompt, session_id="default")
     )
     return Agent(
         client=llm_client,
         registry=tool_registry,
+        skills=skill_registry,
         session=conversation,
         max_rounds=resolved.max_tool_rounds,
-        system_prompt=resolved.system_prompt,
+        system_prompt=full_prompt,
     )
 
 
-__all__ = ["build_agent", "build_client", "build_default_registry"]
+__all__ = [
+    "build_agent",
+    "build_client",
+    "build_default_registry",
+    "build_default_skill_registry",
+]
